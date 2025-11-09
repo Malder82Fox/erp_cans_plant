@@ -1,4 +1,3 @@
-"""Tooling schemas."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -8,6 +7,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from erp.backend.models.tooling import BatchStatus, OperationType
+
+"""Tooling schemas."""
 
 
 class ToolBase(BaseModel):
@@ -111,7 +112,7 @@ class OperationChange(BaseModel):
     new_value: Decimal
 
 
-class ToolOperationPayload(BaseModel):
+class BatchOperationPayload(BaseModel):
     """Payload for batch operation."""
 
     op_type: OperationType

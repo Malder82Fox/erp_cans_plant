@@ -138,7 +138,11 @@ class MaintenanceService:
 
     def _validate_transition(self, current: WorkOrderStatus, new: WorkOrderStatus) -> None:
         valid_transitions = {
-            WorkOrderStatus.OPEN: {WorkOrderStatus.IN_PROGRESS, WorkOrderStatus.CANCELED},
+            WorkOrderStatus.OPEN: {
+                WorkOrderStatus.IN_PROGRESS,
+                WorkOrderStatus.CANCELED,
+                WorkOrderStatus.DONE,
+            },
             WorkOrderStatus.IN_PROGRESS: {WorkOrderStatus.DONE, WorkOrderStatus.CANCELED},
             WorkOrderStatus.DONE: set(),
             WorkOrderStatus.CANCELED: set(),

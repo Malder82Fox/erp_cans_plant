@@ -17,6 +17,7 @@
   - [Application Layers](#application-layers)
   - [API Specification](#api-specification)
   - [Authentication & Authorization](#authentication--authorization)
+  - [Users & RBAC](#users--rbac)
 - [Frontend](#frontend)
 - [Modules](#modules)
   - [Warehouse](#warehouse)
@@ -246,6 +247,177 @@ flowchart LR
   - `root` – full CRUD including hard deletes & user management.
 - AuditLog persisted for all mutating requests (user id, payload hash, diff snapshot).
 - Rate limiting (Flask-Limiter/Redis) for auth endpoints.
+
+## Users & RBAC
+
+This section explains how to manage users and roles in the ERP: creating users with a **temporary password**, forcing a **password change at first login**, changing roles, deactivating/activating, and **resetting passwords** (root-only).
+> RU: Ниже — простые пошаговые инструкции: UI, API (curl), CLI.
+
+### Roles & permissions
+
+| Capability                                  | user | admin | root |
+|---------------------------------------------|:----:|:-----:|:----:|
+| Read lists & details                        |  ✔︎  |  ✔︎   |  ✔︎  |
+| Create / Update business entities           |  ✖︎  |  ✔︎   |  ✔︎  |
+| Delete business entities                    |  ✖︎  |  ✖︎   |  ✔︎  |
+| Manage users (create/role/reset/deactivate) |  ✖︎  |  ✖︎   |  ✔︎  |
+
+### Seed accounts & env
+
+Upon first run, three accounts are seeded (if the `users` table is empty). Passwords come from `.env`:
+
+```env
+SEED_ROOT_PASSWORD=ChangeMeRoot123!
+SEED_ADMIN_PASSWORD=ChangeMeAdmin123!
+SEED_USER_PASSWORD=ChangeMeUser123!
+PASSWORD_HASH_SCHEME=bcrypt
+
+
+
+```
+root / root@example.com — role root
+
+
+admin / admin@example.com — role admin
+
+
+user / user@example.com — role user
+
+
+Quick start — UI (simplest)
+
+
+Sign in as root.
+
+
+Go to Admin → Users → New User.
+
+
+Fill username, email, pick Role (user|admin|root), set Temporary password.
+
+
+Tick Must change password at next login and click Create.
+
+
+First login flow (for the new user): they sign in with the temporary password, are redirected to Change Password, and must set a new password before accessing business pages.
+Forgotten password: sign in as root → Admin → Users → Reset Password → set a new temporary password + tick Must change password → share the temp password securely.
+API (curl) — root-only for user management
+1) Login as root
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"root","password":"ChangeMeRoot123!"}'
+# copy access_token into $ACCESS_TOKEN
+
+2) Create user with temporary password + forced change
+curl -s -X POST http://localhost:8000/api/v1/users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "qa_manager",
+    "email": "qa_manager@example.com",
+    "role": "admin",
+    "password": "TempPass!2025",
+    "must_change_password": true
+  }'
+
+3) First login → user must change password
+# user logs in with temp password
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"qa_manager","password":"TempPass!2025"}'
+# response includes: "password_change_required": true
+
+# change password (with the user's own token)
+curl -s -X POST http://localhost:8000/api/v1/auth/change-password \
+  -H "Authorization: Bearer <USER_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"old_password":"TempPass!2025","new_password":"StrongPass!2025"}'
+
+4) Reset password (root) — sets a new temp password & forces change
+curl -s -X POST http://localhost:8000/api/v1/users/42/reset-password \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"temporary_password":"TempAgain!2025","must_change_password":true}'
+
+5) Change role (root)
+curl -s -X PUT http://localhost:8000/api/v1/users/42 \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"user"}'
+
+6) Deactivate / Activate (root)
+# deactivate
+curl -s -X PUT http://localhost:8000/api/v1/users/42 \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active":false}'
+
+# activate
+curl -s -X PUT http://localhost:8000/api/v1/users/42 \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active":true}'
+
+7) List & search users (root)
+curl -s -X GET "http://localhost:8000/api/v1/users?role=admin&is_active=true&q=qa" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+
+CLI — handy for admins
+# create user with temp password + must-change
+python scripts/manage.py users create \
+  --username qa_manager \
+  --email qa_manager@example.com \
+  --role admin \
+  --password "TempPass!2025" \
+  --must-change
+
+# reset password (root)
+python scripts/manage.py users reset-password \
+  --username qa_manager \
+  --password "TempAgain!2025" \
+  --must-change
+
+# change role
+python scripts/manage.py users set-role --username qa_manager --role user
+
+# deactivate / list
+python scripts/manage.py users deactivate --username qa_manager
+python scripts/manage.py users list --role admin --active true
+
+Security notes
+
+
+Passwords are stored hashed (bcrypt/argon2id).
+
+
+Enforce password policy (length ≥ 10, upper/lower/digit/special).
+
+
+Rate-limit login (e.g., 5 attempts/min/IP).
+
+
+On reset/change password, invalidate all refresh tokens.
+
+
+is_active=false → login/refresh are blocked.
+
+
+All user mutations go to AuditLog.
+
+
+Troubleshooting
+
+
+401/403 on /api/v1/users — not root or missing Authorization: Bearer ....
+
+
+409 Conflict — username/email already exists.
+
+
+Password change required keeps appearing — user didn’t successfully call /auth/change-password.
+
+
+Seeds not created — users table isn’t empty or SEED_* not set in .env.
 
 ## Frontend
 - React 18 + Vite bundler, TailwindCSS + shadcn/ui components, lucide-react icons.

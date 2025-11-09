@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from erp.backend.core.auth import get_current_user, require_roles
+from erp.backend.core.auth import require_any, require_role
 from erp.backend.core.database import get_db_session
 from erp.backend.models.user import User, UserRole
 from erp.backend.schemas.tooling import (
@@ -29,7 +29,10 @@ def get_service(session: Session = Depends(get_db_session)) -> ToolingService:
 
 
 @router.get("/tools", response_model=list[ToolRead])
-def list_tools(service: ToolingService = Depends(get_service), current_user: User = Depends(get_current_user)) -> list[ToolRead]:
+def list_tools(
+    service: ToolingService = Depends(get_service),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
+) -> list[ToolRead]:
     tools = service.list_tools()
     return [ToolRead.model_validate(tool) for tool in tools]
 
@@ -38,7 +41,7 @@ def list_tools(service: ToolingService = Depends(get_service), current_user: Use
 def create_tool(
     payload: ToolCreate,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> ToolRead:
     tool = service.create_tool(payload)
     return ToolRead.model_validate(tool)
@@ -49,7 +52,7 @@ def update_tool(
     tool_id: int,
     payload: ToolUpdate,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> ToolRead:
     tool = service.update_tool(tool_id, payload)
     return ToolRead.model_validate(tool)
@@ -59,7 +62,7 @@ def update_tool(
 def delete_tool(
     tool_id: int,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ROOT,)),
+    current_user: User = Depends(require_role(UserRole.ROOT)),
 ) -> None:
     service.delete_tool(tool_id)
 
@@ -68,7 +71,7 @@ def delete_tool(
 def get_dims(
     tool_id: int,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
 ) -> dict:
     dims, history = service.get_tool_dimensions(tool_id)
     return {
@@ -90,7 +93,10 @@ def get_dims(
 
 
 @router.get("/batches", response_model=list[BatchRead])
-def list_batches(service: ToolingService = Depends(get_service), current_user: User = Depends(get_current_user)) -> list[BatchRead]:
+def list_batches(
+    service: ToolingService = Depends(get_service),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
+) -> list[BatchRead]:
     batches = service.list_batches()
     return [BatchRead.model_validate(batch) for batch in batches]
 
@@ -99,7 +105,7 @@ def list_batches(service: ToolingService = Depends(get_service), current_user: U
 def create_batch(
     payload: BatchCreate,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> BatchRead:
     batch = service.create_batch(payload.name, payload.tool_ids, payload.status)
     return BatchRead.model_validate(batch)
@@ -110,7 +116,7 @@ def update_batch(
     batch_id: int,
     payload: BatchUpdate,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> BatchRead:
     batch = service.update_batch(batch_id, payload)
     return BatchRead.model_validate(batch)
@@ -121,7 +127,7 @@ def run_operation(
     batch_id: int,
     payload: BatchOperationPayload,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> BatchOperationResult:
     return service.process_operation(batch_id, payload)
 
@@ -130,6 +136,6 @@ def run_operation(
 def batch_report(
     batch_id: int,
     service: ToolingService = Depends(get_service),
-    current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
 ) -> BatchReport:
     return service.generate_batch_report(batch_id)

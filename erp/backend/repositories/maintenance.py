@@ -30,6 +30,7 @@ class EquipmentRepository:
 
     def add(self, equipment: Equipment) -> Equipment:
         self.session.add(equipment)
+        self.session.flush()
         return equipment
 
 
@@ -47,6 +48,7 @@ class PMTemplateRepository:
 
     def add(self, template: PMTemplate) -> PMTemplate:
         self.session.add(template)
+        self.session.flush()
         return template
 
 
@@ -64,6 +66,7 @@ class PMPlanRepository:
 
     def add(self, plan: PMPlan) -> PMPlan:
         self.session.add(plan)
+        self.session.flush()
         return plan
 
     def due_plans(self, reference_date: date) -> Iterable[PMPlan]:
@@ -84,6 +87,7 @@ class WorkOrderRepository:
 
     def add(self, work_order: WorkOrder) -> WorkOrder:
         self.session.add(work_order)
+        self.session.flush()
         return work_order
 
     def list_open(self) -> Iterable[WorkOrder]:
@@ -102,6 +106,7 @@ class MaintenanceHistoryRepository:
 
     def add(self, history: MaintenanceHistory) -> MaintenanceHistory:
         self.session.add(history)
+        self.session.flush()
         return history
 
     def list(self) -> Iterable[MaintenanceHistory]:

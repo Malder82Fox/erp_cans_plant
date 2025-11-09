@@ -1,11 +1,7 @@
 """Authentication schemas."""
 from __future__ import annotations
 
-from datetime import datetime
-
-from pydantic import BaseModel, EmailStr, Field
-
-from erp.backend.models.user import UserRole
+from pydantic import BaseModel, Field
 
 
 class TokenPair(BaseModel):
@@ -14,6 +10,7 @@ class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = Field(default="bearer")
+    password_change_required: bool = Field(default=False)
 
 
 class LoginRequest(BaseModel):
@@ -29,24 +26,8 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-class UserCreate(BaseModel):
-    """Payload for creating a user."""
+class ChangePasswordRequest(BaseModel):
+    """Request body for password change."""
 
-    username: str
-    full_name: str
-    email: EmailStr | None = None
-    password: str = Field(min_length=8)
-    role: UserRole = UserRole.USER
-
-
-class UserRead(BaseModel):
-    """User representation for responses."""
-
-    id: int
-    username: str
-    full_name: str
-    email: str | None = None
-    role: UserRole
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
+    old_password: str
+    new_password: str

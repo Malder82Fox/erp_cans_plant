@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from erp.backend.config import get_settings
 from erp.backend.models.base import Base
+from erp.backend.core.seeding import seed_users_if_empty
 
 
 settings = get_settings()
@@ -20,6 +21,8 @@ def init_database() -> None:
     """Create database tables in environments without migrations."""
 
     Base.metadata.create_all(bind=engine)
+    with SessionLocal() as session:
+        seed_users_if_empty(session)
 
 
 @contextmanager

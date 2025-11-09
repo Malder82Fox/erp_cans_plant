@@ -5,16 +5,7 @@ from typing import Iterable, Optional
 
 from sqlalchemy.orm import Session
 
-from erp.backend.models.tooling import (
-    Batch,
-    BatchItem,
-    BatchStatus,
-    OperationType,
-    Tool,
-    ToolDim,
-    ToolDimChange,
-    ToolOperation,
-)
+from erp.backend.models.tooling import Batch, BatchItem, Tool, ToolDim, ToolDimChange, ToolOperation
 
 
 class ToolRepository:
@@ -31,6 +22,7 @@ class ToolRepository:
 
     def add(self, tool: Tool) -> Tool:
         self.session.add(tool)
+        self.session.flush()
         return tool
 
 
@@ -49,6 +41,7 @@ class ToolDimRepository:
 
     def add(self, dim: ToolDim) -> ToolDim:
         self.session.add(dim)
+        self.session.flush()
         return dim
 
 
@@ -66,6 +59,7 @@ class BatchRepository:
 
     def add(self, batch: Batch) -> Batch:
         self.session.add(batch)
+        self.session.flush()
         return batch
 
 
@@ -77,6 +71,7 @@ class BatchItemRepository:
 
     def add(self, item: BatchItem) -> BatchItem:
         self.session.add(item)
+        self.session.flush()
         return item
 
 
@@ -88,6 +83,7 @@ class ToolOperationRepository:
 
     def add(self, operation: ToolOperation) -> ToolOperation:
         self.session.add(operation)
+        self.session.flush()
         return operation
 
 
@@ -99,6 +95,7 @@ class ToolDimChangeRepository:
 
     def add(self, change: ToolDimChange) -> ToolDimChange:
         self.session.add(change)
+        self.session.flush()
         return change
 
     def list_for_tool(self, tool_id: int) -> Iterable[ToolDimChange]:
