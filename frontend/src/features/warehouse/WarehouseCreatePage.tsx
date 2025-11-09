@@ -1,26 +1,32 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
-import { createPart, type PartPayload } from "../../lib/apiClient";
+import * as api from "../../lib/apiClient";
+import { BackButton } from "../shared/components/BackButton";
 import { PartForm } from "./PartForm";
+import type { PartPayload } from "../../lib/apiClient";
 
-export function WarehouseCreatePage(): JSX.Element {
-  const navigate = useNavigate();
+export default function WarehouseCreatePage(): JSX.Element {
   const mutation = useMutation({
-    mutationFn: (payload: PartPayload) => createPart(payload),
-    onSuccess: (part) => {
-      navigate(`/warehouse/${part.id}`);
+    mutationFn: (payload: PartPayload) => api.createPart(payload),
+    onSuccess: () => {
+      console.log("Part created");
     }
   });
 
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-xl font-semibold">Create part</h2>
+        <BackButton />
+        <h3 className="text-lg font-semibold">Create Part</h3>
       </CardHeader>
       <CardContent>
-        <PartForm mode="create" onSubmit={(payload) => mutation.mutateAsync(payload as PartPayload)} isSubmitting={mutation.isPending} />
+        <PartForm
+          mode="create"
+          onSubmit={async (payload) => {
+            await mutation.mutateAsync(payload as PartPayload); // Promise<void>
+          }}
+          isSubmitting={mutation.isPending}
+        />
       </CardContent>
     </Card>
   );
