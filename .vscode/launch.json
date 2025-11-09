@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: FastAPI (uvicorn)",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "erp.backend.app:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "DATABASE_URL": "postgresql+psycopg://erp:erp@127.0.0.1:5432/erp"
+      },
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Frontend: Vite dev server",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend",
+      "env": {
+        "VITE_API_BASE_URL": "http://localhost:8000/api/v1"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "ERP (backend + frontend)",
+      "configurations": [
+        "Backend: FastAPI (uvicorn)",
+        "Frontend: Vite dev server"
+      ]
+    }
+  ]
+}

@@ -51,6 +51,8 @@
 
 ## Quick Start
 
+> Full bilingual instructions live in [docs/RUN_GUIDE.md](docs/RUN_GUIDE.md).
+
 ### Docker Compose
 ```bash
 cp .env.example .env
@@ -67,7 +69,7 @@ docker compose up --build
 
 #### Prerequisites
 - Python 3.10+
-- Node.js 18+
+- Node.js 20+
 - PostgreSQL 14+
 - Redis (опционально для rate limiting)
 
@@ -77,9 +79,10 @@ cd erp/backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export FLASK_APP=app:create_app
-flask db upgrade  # Alembic migrations
-flask run --host 0.0.0.0 --port 8000
+export PYTHONPATH=$(pwd)/..
+export DATABASE_URL=postgresql+psycopg://erp:erp@127.0.0.1:5432/erp
+alembic -c alembic.ini upgrade head
+uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 Run backend tests:
 ```bash
@@ -110,12 +113,15 @@ npm run build
    npm run dev
    ```
    UI will be available at http://localhost:5173/ and proxies API calls to the backend defined by `VITE_API_BASE_URL`.
-4. Run unit tests and build checks:
+4. Build production bundle:
    ```bash
-   npm run test
    npm run build
    ```
-5. Docker workflow:
+5. Preview the build locally:
+   ```bash
+   npm run preview
+   ```
+6. Docker workflow:
    ```bash
    cd dev/docker
    docker compose up --build frontend
