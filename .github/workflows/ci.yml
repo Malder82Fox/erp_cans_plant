@@ -16,12 +16,14 @@ jobs:
           python-version: "3.11"
       - name: Install backend dependencies
         run: |
+          cd erp/backend
           python -m pip install --upgrade pip
-          pip install -r erp/backend/requirements.txt
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Run backend tests
         run: |
           cd erp/backend
-          pytest
+          pytest -q
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +35,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install --legacy-peer-deps
+          npm ci
       - name: Build frontend
         run: |
           cd frontend

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, type TdHTMLAttributes } from "react";
 
 import { Button } from "../../../components/ui/button";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
@@ -10,6 +10,7 @@ export interface DataTableColumn<T> {
   accessor?: (row: T) => ReactNode;
   render?: (row: T) => ReactNode;
   className?: string;
+  cellProps?: TdHTMLAttributes<HTMLTableCellElement>;
   sortable?: boolean;
 }
 
@@ -26,6 +27,14 @@ export interface DataTableProps<T> {
     total: number;
     onPageChange: (page: number) => void;
   };
+}
+
+export function EmptyRow({ colSpan, children }: { colSpan: number; children: ReactNode }): JSX.Element {
+  return (
+    <td colSpan={colSpan} className="p-4 text-center text-muted-foreground">
+      {children}
+    </td>
+  );
 }
 
 export function DataTable<T>({
@@ -80,16 +89,14 @@ export function DataTable<T>({
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  {emptyMessage}
-                </TableCell>
+                <EmptyRow colSpan={columns.length}>{emptyMessage}</EmptyRow>
               </TableRow>
             ) : (
               data.map((row, rowIndex) => (
                 <Fragment key={rowIndex}>
                   <TableRow>
                     {columns.map((column) => (
-                      <TableCell key={column.key} className={column.className ?? ""}>
+                      <TableCell key={column.key} className={column.className ?? ""} {...column.cellProps}>
                         {column.render ? column.render(row) : column.accessor ? column.accessor(row) : (row as any)[column.key]}
                       </TableCell>
                     ))}

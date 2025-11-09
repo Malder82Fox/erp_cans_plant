@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Select } from "../../components/ui/select";
+import { type PaginatedResponse } from "../../lib/api";
 import { type User, type UserRole, type UserUpdateRequest, listUsers, updateUser } from "../../lib/apiClient";
 import { DataTable, type DataTableColumn } from "../shared/components/DataTable";
 import { RoleBadge } from "../shared/components/RoleBadge";
@@ -22,7 +23,10 @@ export function UsersPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [search, setSearch] = useState("");
 
-  const query = useQuery({
+  const {
+    data = { items: [], total: 0, page, page_size: PAGE_SIZE },
+    isLoading
+  } = useQuery<PaginatedResponse<User>>({
     queryKey: ["users", page, roleFilter, statusFilter, search],
     queryFn: () =>
       listUsers({
@@ -32,7 +36,7 @@ export function UsersPage(): JSX.Element {
         is_active: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
         q: search || undefined
       }),
-    keepPreviousData: true
+    placeholderData: (prev) => prev
   });
 
   const updateMutation = useMutation({
@@ -127,13 +131,13 @@ export function UsersPage(): JSX.Element {
         </div>
       </div>
       <DataTable
-        data={query.data?.items ?? []}
+        data={data.items}
         columns={columns}
-        isLoading={query.isLoading}
+        isLoading={isLoading}
         pagination={{
           page,
           pageSize: PAGE_SIZE,
-          total: query.data?.total ?? 0,
+          total: data.total,
           onPageChange: setPage
         }}
       />

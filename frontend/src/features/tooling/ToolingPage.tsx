@@ -21,8 +21,10 @@ import {
   updateTool,
   type Batch,
   type BatchOperationRequest,
+  type BatchUpdatePayload,
   type Tool,
-  type ToolPayload
+  type ToolPayload,
+  type ToolUpdatePayload
 } from "../../lib/apiClient";
 import { useAuth } from "../../lib/auth";
 import { Form, FormField } from "../shared/components/Form";
@@ -113,7 +115,7 @@ export function ToolingPage(): JSX.Element {
   });
 
   const updateToolMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: ToolPayload }) => updateTool(id, payload),
+    mutationFn: ({ id, payload }: { id: number; payload: ToolUpdatePayload }) => updateTool(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["tools"] });
     }
@@ -136,7 +138,7 @@ export function ToolingPage(): JSX.Element {
   });
 
   const updateBatchMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: Batch["status"] }) => updateBatch(id, { status }),
+    mutationFn: ({ id, status }: { id: number; status: Batch["status"] }) => updateBatch(id, { status } satisfies BatchUpdatePayload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["batches"] });
     }

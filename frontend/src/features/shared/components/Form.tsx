@@ -24,12 +24,13 @@ export function Form<TFieldValues extends FieldValues>({ form, onSubmit, childre
 interface FormFieldProps {
   label: ReactNode;
   description?: ReactNode;
-  error?: FieldError;
+  error?: FieldError | FieldError[] | undefined;
   required?: boolean;
   children: ReactNode;
 }
 
 export function FormField({ label, description, error, required = false, children }: FormFieldProps): JSX.Element {
+  const normalizedError = Array.isArray(error) ? error[0] : error;
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
@@ -40,7 +41,7 @@ export function FormField({ label, description, error, required = false, childre
         {description && <div className="text-xs text-muted-foreground">{description}</div>}
       </div>
       {children}
-      {error && <p className="text-xs text-destructive">{error.message}</p>}
+      {normalizedError && <p className="text-xs text-destructive">{normalizedError.message}</p>}
     </div>
   );
 }
