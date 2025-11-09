@@ -100,6 +100,10 @@ Build production bundle:
 npm run build
 ```
 
+## Docs & Guides
+- Local Run Guide / Руководство по запуску → [docs/RUN_GUIDE.md](docs/RUN_GUIDE.md)
+- User Management (Accounts & Roles) / Управление аккаунтами и ролями → [docs/USER_MANAGEMENT.md](docs/USER_MANAGEMENT.md)
+
 ## Frontend Quick Start
 
 1. Install dependencies:
