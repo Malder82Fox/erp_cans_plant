@@ -142,42 +142,11 @@ npm run build
 > **RU:** Никогда не коммитьте реальные секреты, используйте `.env` и GitHub Secrets.
 
 ## Project Structure
-```
-erp/
-  backend/
-    app.py                # Flask app factory
-    api/                  # Blueprints per module (auth, warehouse, maintenance, tooling)
-    config.py             # Base, Dev, Prod configurations
-    core/                 # JWT, security, utils, pagination, errors
-    models/               # SQLAlchemy models
-    repositories/         # Data access layer per module
-    schemas/              # Marshmallow schemas + request/response validation
-    services/             # Business logic services
-    migrations/           # Alembic migration scripts
-    tests/                # Pytest suites per module
-    openapi.yaml          # Generated OpenAPI contract (/api/v1)
-    scripts/
-      manage.py           # CLI utilities (seed, user management, import)
-  frontend/
-    src/
-      features/           # Feature slices per module (warehouse, maintenance, tooling)
-      components/         # UI building blocks (shadcn/ui)
-      hooks/              # React hooks (auth, i18n)
-      i18n/               # EN default, RU secondary translations
-      routes/             # React Router config
-    public/
-    vite.config.ts
-    tailwind.config.ts
-  dev/
-    docker/
-      docker-compose.yml  # Local orchestration
-      backend.Dockerfile
-      frontend.Dockerfile
-      worker.Dockerfile   # Background jobs (future)
-  .github/workflows/ci.yml
-  .env.example
-  README.md
-```
+
+<!-- STRUCTURE:START -->
+
+<!-- STRUCTURE:END -->
+<!-- STRUCTURE:END -->
 
 ## Architecture Overview
 
