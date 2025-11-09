@@ -57,6 +57,7 @@ class PartRepository:
 
     def create(self, part: Part) -> Part:
         self.session.add(part)
+        self.session.flush()
         return part
 
     def soft_delete(self, part: Part) -> None:
@@ -72,6 +73,7 @@ class AuditLogRepository:
     def create(self, entity_type: str, entity_id: int, action: str, user_id: Optional[int], changes: str | None) -> AuditLog:
         entry = AuditLog(entity_type=entity_type, entity_id=entity_id, action=action, user_id=user_id, changes=changes)
         self.session.add(entry)
+        self.session.flush()
         return entry
 
     def list_for_entity(self, entity_type: str, entity_id: int) -> Iterable[AuditLog]:

@@ -12,15 +12,9 @@ paths:
       requestBody:
         required: true
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-              required: [username, password]
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: Token pair
@@ -58,9 +52,24 @@ paths:
       responses:
         '204':
           description: Logged out
-  /api/v1/auth/users/me:
-    get:
+  /api/v1/auth/change-password:
+    post:
       tags: [Auth]
+      summary: Change password for current user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed
+  /api/v1/users/me:
+    get:
+      tags: [Users]
       summary: Get current user profile
       security:
         - bearerAuth: []
@@ -71,6 +80,140 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserRead'
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: List users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: role
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - in: query
+          name: is_active
+          schema:
+            type: boolean
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '403':
+          description: Forbidden
+    post:
+      tags: [Users]
+      summary: Create user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+        '403':
+          description: Forbidden
+        '409':
+          description: Conflict
+  /api/v1/users/{user_id}:
+    put:
+      tags: [Users]
+      summary: Update user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+    delete:
+      tags: [Users]
+      summary: Delete user (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+  /api/v1/users/{user_id}/reset-password:
+    post:
+      tags: [Users]
+      summary: Reset user password
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserResetPasswordRequest'
+      responses:
+        '200':
+          description: Reset user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
   /api/v1/warehouse/parts:
     get:
       tags: [Warehouse]
@@ -239,7 +382,25 @@ components:
           type: string
         token_type:
           type: string
-      required: [access_token, refresh_token, token_type]
+        password_change_required:
+          type: boolean
+      required: [access_token, refresh_token, token_type, password_change_required]
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [username, password]
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+      required: [old_password, new_password]
     UserRead:
       type: object
       properties:
@@ -247,12 +408,71 @@ components:
           type: integer
         username:
           type: string
-        full_name:
-          type: string
         email:
           type: string
         role:
           type: string
+        is_active:
+          type: boolean
+        must_change_password:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, username, role, is_active, must_change_password, created_at, updated_at]
+    UserRole:
+      type: string
+      enum: [user, admin, root]
+    UserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        password:
+          type: string
+        must_change_password:
+          type: boolean
+      required: [username, role, password]
+    UserUpdateRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        is_active:
+          type: boolean
+        password:
+          type: string
+        must_change_password:
+          type: boolean
+    UserResetPasswordRequest:
+      type: object
+      properties:
+        temporary_password:
+          type: string
+        must_change_password:
+          type: boolean
+      required: [temporary_password]
+    UserListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRead'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
     Part:
       type: object
       properties:

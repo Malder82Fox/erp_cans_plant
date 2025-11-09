@@ -10,8 +10,7 @@ from fastapi.testclient import TestClient
 def _auth_headers(client: TestClient) -> dict[str, str]:
     response = client.post(
         "/api/v1/auth/login",
-        data={"username": "root", "password": "rootpass123"},
-        headers={"content-type": "application/x-www-form-urlencoded"},
+        json={"username": "root", "password": "rootpass123"},
     )
     tokens = response.json()
     return {"Authorization": f"Bearer {tokens['access_token']}"}

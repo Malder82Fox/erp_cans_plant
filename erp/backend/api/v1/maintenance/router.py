@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from erp.backend.core.auth import get_current_user, require_roles
+from erp.backend.core.auth import require_any
 from erp.backend.core.database import get_db_session
 from erp.backend.models.user import User, UserRole
 from erp.backend.schemas.maintenance import (
@@ -37,7 +37,7 @@ def get_service(session: Session = Depends(get_db_session)) -> MaintenanceServic
 @router.get("/equipment", response_model=list[EquipmentRead])
 def list_equipment(
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
 ) -> list[EquipmentRead]:
     equipment = service.list_equipment()
     return [EquipmentRead.model_validate(eq) for eq in equipment]
@@ -47,14 +47,17 @@ def list_equipment(
 def create_equipment(
     payload: EquipmentCreate,
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> EquipmentRead:
     equipment = service.create_equipment(payload)
     return EquipmentRead.model_validate(equipment)
 
 
 @router.get("/pm/templates", response_model=list[PMTemplateRead])
-def list_templates(service: MaintenanceService = Depends(get_service), current_user: User = Depends(get_current_user)) -> list[PMTemplateRead]:
+def list_templates(
+    service: MaintenanceService = Depends(get_service),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
+) -> list[PMTemplateRead]:
     templates = service.list_pm_templates()
     return [PMTemplateRead.model_validate(t) for t in templates]
 
@@ -63,14 +66,17 @@ def list_templates(service: MaintenanceService = Depends(get_service), current_u
 def create_template(
     payload: PMTemplateCreate,
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> PMTemplateRead:
     template = service.create_pm_template(payload)
     return PMTemplateRead.model_validate(template)
 
 
 @router.get("/pm/plans", response_model=list[PMPlanRead])
-def list_plans(service: MaintenanceService = Depends(get_service), current_user: User = Depends(get_current_user)) -> list[PMPlanRead]:
+def list_plans(
+    service: MaintenanceService = Depends(get_service),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
+) -> list[PMPlanRead]:
     plans = service.list_pm_plans()
     return [PMPlanRead.model_validate(plan) for plan in plans]
 
@@ -79,7 +85,7 @@ def list_plans(service: MaintenanceService = Depends(get_service), current_user:
 def create_plan(
     payload: PMPlanCreate,
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> PMPlanRead:
     plan = service.create_pm_plan(payload)
     return PMPlanRead.model_validate(plan)
@@ -88,13 +94,16 @@ def create_plan(
 @router.post("/pm/generate-due", response_model=GenerateDueResponse)
 def generate_due(
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> GenerateDueResponse:
     return service.generate_due_work_orders()
 
 
 @router.get("/work-orders", response_model=list[WorkOrderRead])
-def list_work_orders(service: MaintenanceService = Depends(get_service), current_user: User = Depends(get_current_user)) -> list[WorkOrderRead]:
+def list_work_orders(
+    service: MaintenanceService = Depends(get_service),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
+) -> list[WorkOrderRead]:
     work_orders = service.list_work_orders()
     return [WorkOrderRead.model_validate(wo) for wo in work_orders]
 
@@ -103,7 +112,7 @@ def list_work_orders(service: MaintenanceService = Depends(get_service), current
 def create_work_order(
     payload: WorkOrderCreate,
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> WorkOrderRead:
     work_order = service.create_work_order(payload)
     return WorkOrderRead.model_validate(work_order)
@@ -114,7 +123,7 @@ def update_work_order(
     work_order_id: int,
     payload: WorkOrderUpdate,
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ROOT)),
+    current_user: User = Depends(require_any(UserRole.ADMIN, UserRole.ROOT)),
 ) -> WorkOrderRead:
     work_order = service.update_work_order(work_order_id, payload)
     return WorkOrderRead.model_validate(work_order)
@@ -124,7 +133,7 @@ def update_work_order(
 def history(
     export: bool = Query(default=False),
     service: MaintenanceService = Depends(get_service),
-    current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_any(UserRole.USER, UserRole.ADMIN, UserRole.ROOT)),
 ):
     records = service.list_history()
     if export:
