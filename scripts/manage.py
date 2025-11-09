@@ -1,9 +1,13 @@
-"""Management CLI for user operations."""
+"""Management CLI for user and database operations."""
 from __future__ import annotations
 
 import argparse
 
-from erp.backend.core.database import session_scope
+from erp.backend.core.database import (
+    create_database_schema,
+    render_database_url,
+    session_scope,
+)
 from erp.backend.models.user import User, UserRole
 from erp.backend.repositories.user import UserRepository
 from erp.backend.schemas.users import UserCreateRequest, UserResetPasswordRequest, UserUpdateRequest
@@ -18,6 +22,14 @@ def get_actor(repo: UserRepository, username: str) -> User:
     if actor.role != UserRole.ROOT:
         raise SystemExit("Actor must have root role")
     return actor
+
+
+def handle_init_db(_: argparse.Namespace) -> None:
+    """Create database tables without running migrations or seeds."""
+
+    table_count = create_database_schema()
+    url = render_database_url()
+    print(f"Created {table_count} tables in {url}.")
 
 
 def handle_create(args: argparse.Namespace) -> None:
@@ -106,11 +118,19 @@ def handle_list(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="ERP management CLI")
-    entity_parsers = parser.add_subparsers(dest="entity", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    users_parser = entity_parsers.add_parser("users", help="User management commands")
-    users_parser.add_argument("--actor", default="root", help="Username performing the action (must be root)")
-    user_subparsers = users_parser.add_subparsers(dest="command", required=True)
+    init_db_parser = subparsers.add_parser(
+        "init-db",
+        help="Create database tables without seeding users.",
+    )
+    init_db_parser.set_defaults(func=handle_init_db)
+
+    users_parser = subparsers.add_parser("users", help="User management commands")
+    users_parser.add_argument(
+        "--actor", default="root", help="Username performing the action (must be root)"
+    )
+    user_subparsers = users_parser.add_subparsers(dest="user_command", required=True)
 
     create_parser = user_subparsers.add_parser("create", help="Create a user")
     create_parser.add_argument("--username", required=True)
@@ -151,8 +171,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.entity == "users":
-        args.func(args)
+    args.func(args)
 
 
 if __name__ == "__main__":

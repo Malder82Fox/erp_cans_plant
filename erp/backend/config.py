@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     login_rate_limit_per_minute: int = Field(default=5, alias="LOGIN_RATE_LIMIT_PER_MINUTE")
     login_rate_limit_window_minutes: int = Field(default=1, alias="LOGIN_RATE_LIMIT_WINDOW_MINUTES")
     user_soft_delete_enabled: bool = Field(default=True, alias="USER_SOFT_DELETE_ENABLED")
+    auto_create_db_schema: bool = Field(default=False, alias="AUTO_CREATE_DB_SCHEMA")
     seed_root_password: str | None = Field(default=None, alias="SEED_ROOT_PASSWORD")
     seed_admin_password: str | None = Field(default=None, alias="SEED_ADMIN_PASSWORD")
     seed_user_password: str | None = Field(default=None, alias="SEED_USER_PASSWORD")

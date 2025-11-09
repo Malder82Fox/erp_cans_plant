@@ -25,7 +25,7 @@
   - [Maintenance](#maintenance)
   - [Tooling](#tooling)
 - [Users & RBAC Operations](#users--rbac-operations)
-  - [Seed Users](#seed-users)
+- [Initial users (no auto seed)](#initial-users-no-auto-seed)
   - [Managing Accounts via API](#managing-accounts-via-api)
   - [CLI Utilities](#cli-utilities)
   - [Token Lifecycle & Security](#token-lifecycle--security)
@@ -53,6 +53,18 @@
 
 > Full bilingual instructions live in [docs/RUN_GUIDE.md](docs/RUN_GUIDE.md).
 
+### Initialize empty DB (no seed)
+- Option A (one-shot): `python scripts/manage.py init-db`
+- Option B (on boot): set `AUTO_CREATE_DB_SCHEMA=true` and start backend (tables will be created on first run).
+- No admin user is auto-created; create users the same way you did before (CLI/API/UI).
+
+### Инициализация пустой БД (без сидов)
+- Вариант A (разово): `python scripts/manage.py init-db`
+- Вариант B (при старте): установите `AUTO_CREATE_DB_SCHEMA=true` и запустите backend (таблицы создадутся при первом запуске).
+- Администратор автоматически не создаётся; пользователей создаём как и раньше (CLI/API/UI).
+
+> **RU:** Если видите ошибки аутентификации при первом запуске — сначала создайте пользователя (CLI/API/UI) и перезайдите.
+
 ### Docker Compose
 ```bash
 cp .env.example .env
@@ -63,7 +75,7 @@ docker compose up --build
 - Frontend UI: http://localhost:5173/
 - Swagger UI (OpenAPI): http://localhost:8000/api/docs
 
-> **RU:** Для быстрого демо достаточно Docker; сид-данные загружаются автоматически при первом запуске.
+> **RU:** Для быстрого демо достаточно Docker; перед входом создайте пользователя через CLI/API/UI и авторизуйтесь с его данными.
 
 ### Local Development
 
@@ -80,8 +92,9 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 export PYTHONPATH=$(pwd)/..
-export DATABASE_URL=postgresql+psycopg://erp:erp@127.0.0.1:5432/erp
-alembic -c alembic.ini upgrade head
+# Optional: override DATABASE_URL if you prefer PostgreSQL instead of the default SQLite file
+# export DATABASE_URL=postgresql+psycopg://erp:erp@127.0.0.1:5432/erp
+python ../scripts/manage.py init-db
 uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 Run backend tests:
@@ -138,7 +151,8 @@ npm run build
 | Variable | Description | Default (.env.example) |
 | --- | --- | --- |
 | `FLASK_ENV` | Environment (`development`/`production`) | `development` |
-| `DATABASE_URL` | SQLAlchemy DSN | `postgresql+psycopg://erp:erp@localhost:5432/erp` |
+| `DATABASE_URL` | SQLAlchemy DSN | `sqlite:///./erp.db` |
+| `AUTO_CREATE_DB_SCHEMA` | Auto-create tables on backend startup (`true`/`false`) | `` |
 | `SQLALCHEMY_ECHO` | Enable SQL echo (debug) | `false` |
 | `SECRET_KEY` | JWT signing secret (rotate regularly) | `change-me` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `15` |
@@ -294,27 +308,12 @@ This section explains how to manage users and roles in the ERP: creating users w
 | Delete business entities                    |  ✖︎  |  ✖︎   |  ✔︎  |
 | Manage users (create/role/reset/deactivate) |  ✖︎  |  ✖︎   |  ✔︎  |
 
-### Seed accounts & env
+### Initial setup (no auto seed)
 
-Upon first run, three accounts are seeded (if the `users` table is empty). Passwords come from `.env`:
-
-```env
-SEED_ROOT_PASSWORD=ChangeMeRoot123!
-SEED_ADMIN_PASSWORD=ChangeMeAdmin123!
-SEED_USER_PASSWORD=ChangeMeUser123!
-PASSWORD_HASH_SCHEME=bcrypt
-
-
-
-```
-root / root@example.com — role root
-
-
-admin / admin@example.com — role admin
-
-
-user / user@example.com — role user
-
+- Run `python scripts/manage.py init-db` once (or enable `AUTO_CREATE_DB_SCHEMA=true`) to create empty tables.
+- Provision a root account manually (CLI/API/UI) and store the credentials securely.
+- No default emails or passwords are shipped in `.env` anymore.
+- **RU:** После `init-db` создайте нужных пользователей вручную (CLI/API/UI); дефолтных паролей больше нет.
 
 Quick start — UI (simplest)
 
@@ -337,7 +336,7 @@ API (curl) — root-only for user management
 1) Login as root
 curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"root","password":"ChangeMeRoot123!"}'
+  -d '{"username":"root","password":"<ROOT_PASSWORD>"}'
 # copy access_token into $ACCESS_TOKEN
 
 2) Create user with temporary password + forced change
@@ -449,7 +448,7 @@ Troubleshooting
 Password change required keeps appearing — user didn’t successfully call /auth/change-password.
 
 
-Seeds not created — users table isn’t empty or SEED_* not set in .env.
+No users created on first run — expected. Use CLI/API/UI to provision accounts manually.
 
 ## Frontend
 - React 18 + Vite bundler, TailwindCSS + shadcn/ui components, lucide-react icons.
@@ -660,12 +659,18 @@ curl -X POST http://localhost:8000/api/v1/tooling/batches/42/operation \
 | Reset password | `POST /api/v1/users/{id}/reset-password` | root | Issues temporary password + must-change toggle. |
 | Delete user | `DELETE /api/v1/users/{id}` | root | Soft delete in service layer. |
 
+### Initial users (no auto seed)
+- Run `python scripts/manage.py init-db` once (or enable `AUTO_CREATE_DB_SCHEMA=true`) to create empty tables.
+- Create the first account via CLI/API/UI as before; no admin/root users are provisioned automatically.
+- **RU:** Начальные пользователи не создаются автоматически — используйте привычный способ (CLI/API/UI), затем войдите с созданными
+  учётными данными.
+
 ### CLI Utilities
 ```bash
-python scripts/manage.py seed-users
-python scripts/manage.py create-user --username qa --role user --password Temp123!
-python scripts/manage.py deactivate-user --username admin
-python scripts/manage.py reset-password --username planner --password Tmp456!
+python scripts/manage.py init-db
+python scripts/manage.py users create --actor root --username qa --role user --password "Temp123!"
+python scripts/manage.py users deactivate --actor root --username admin
+python scripts/manage.py users reset-password --actor root --username planner --password "Tmp456!"
 ```
 - CLI commands mirror API validations and write `user_audit_logs`.
 
@@ -742,7 +747,7 @@ npm run build
 ## Troubleshooting & FAQ
 | Issue | Symptom | Resolution |
 | --- | --- | --- |
-| Flask cannot connect to DB | `OperationalError` | Ensure Postgres running, check `DATABASE_URL`, run `alembic upgrade head`. |
+| Flask cannot connect to DB | `OperationalError` | Ensure the target DB exists, check `DATABASE_URL`, run `python scripts/manage.py init-db` (or enable `AUTO_CREATE_DB_SCHEMA`). |
 | JWT invalid | 401 | Verify system clock, ensure refresh token not expired, re-login. |
 | Import fails on encoding | Non-UTF8 CSV | Re-export in UTF-8 or specify encoding in frontend wizard. |
 | Frontend CORS error | `CORS policy` | Update `FRONTEND_URL` env and restart backend. |
