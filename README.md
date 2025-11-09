@@ -144,42 +144,8 @@ npm run build
 ## Project Structure
 
 <!-- STRUCTURE:START -->
-```text
-erp_cans_plant/
-├── erp/
-│   └── backend/
-│       ├── api/                # Flask blueprints/endpoints по модулям
-│       ├── core/               # конфиги, security, utils, ошибки
-│       ├── migrations/         # Alembic-миграции
-│       ├── models/             # SQLAlchemy-модели
-│       ├── repositories/       # слой доступа к данным
-│       ├── schemas/            # DTO/валидация
-│       ├── services/           # бизнес-логика
-│       ├── tests/              # pytest
-│       ├── app.py
-│       ├── config.py
-│       ├── openapi.yaml
-│       ├── requirements.txt
-│       └── environment.yml
-├── frontend/
-│   ├── src/
-│   │   ├── app/                # роутер, провайдеры, layout
-│   │   ├── features/           # warehouse, maintenance, tooling, users
-│   │   └── components/         # ui/shared компоненты
-│   ├── index.html
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── vitest.setup.ts
-├── .github/workflows/ci.yml
-├── dev/
-├── httpx/
-├── scripts/
-├── .env.example
-├── CHANGELOG.md
-└── README.md
-```
+
+<!-- STRUCTURE:END -->
 <!-- STRUCTURE:END -->
 
 ## Architecture Overview
