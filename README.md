@@ -142,42 +142,45 @@ npm run build
 > **RU:** Никогда не коммитьте реальные секреты, используйте `.env` и GitHub Secrets.
 
 ## Project Structure
+
+<!-- STRUCTURE:START -->
+```text
+erp_cans_plant/
+├── erp/
+│   └── backend/
+│       ├── api/                # Flask blueprints/endpoints по модулям
+│       ├── core/               # конфиги, security, utils, ошибки
+│       ├── migrations/         # Alembic-миграции
+│       ├── models/             # SQLAlchemy-модели
+│       ├── repositories/       # слой доступа к данным
+│       ├── schemas/            # DTO/валидация
+│       ├── services/           # бизнес-логика
+│       ├── tests/              # pytest
+│       ├── app.py
+│       ├── config.py
+│       ├── openapi.yaml
+│       ├── requirements.txt
+│       └── environment.yml
+├── frontend/
+│   ├── src/
+│   │   ├── app/                # роутер, провайдеры, layout
+│   │   ├── features/           # warehouse, maintenance, tooling, users
+│   │   └── components/         # ui/shared компоненты
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── vitest.setup.ts
+├── .github/workflows/ci.yml
+├── dev/
+├── httpx/
+├── scripts/
+├── .env.example
+├── CHANGELOG.md
+└── README.md
 ```
-erp/
-  backend/
-    app.py                # Flask app factory
-    api/                  # Blueprints per module (auth, warehouse, maintenance, tooling)
-    config.py             # Base, Dev, Prod configurations
-    core/                 # JWT, security, utils, pagination, errors
-    models/               # SQLAlchemy models
-    repositories/         # Data access layer per module
-    schemas/              # Marshmallow schemas + request/response validation
-    services/             # Business logic services
-    migrations/           # Alembic migration scripts
-    tests/                # Pytest suites per module
-    openapi.yaml          # Generated OpenAPI contract (/api/v1)
-    scripts/
-      manage.py           # CLI utilities (seed, user management, import)
-  frontend/
-    src/
-      features/           # Feature slices per module (warehouse, maintenance, tooling)
-      components/         # UI building blocks (shadcn/ui)
-      hooks/              # React hooks (auth, i18n)
-      i18n/               # EN default, RU secondary translations
-      routes/             # React Router config
-    public/
-    vite.config.ts
-    tailwind.config.ts
-  dev/
-    docker/
-      docker-compose.yml  # Local orchestration
-      backend.Dockerfile
-      frontend.Dockerfile
-      worker.Dockerfile   # Background jobs (future)
-  .github/workflows/ci.yml
-  .env.example
-  README.md
-```
+<!-- STRUCTURE:END -->
 
 ## Architecture Overview
 
