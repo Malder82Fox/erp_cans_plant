@@ -147,6 +147,9 @@ npm run build
 
 <!-- STRUCTURE:END -->
 <!-- STRUCTURE:END -->
+```
+<!-- STRUCTURE:END -->
+<!-- STRUCTURE:END -->
 
 ## Architecture Overview
 
