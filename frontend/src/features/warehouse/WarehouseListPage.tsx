@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { type PaginatedResponse } from "../../lib/api";
 import { type Part, deletePart, listParts } from "../../lib/apiClient";
 import { useAuth } from "../../lib/auth";
 import { DataTable, type DataTableColumn } from "../shared/components/DataTable";
@@ -20,10 +21,10 @@ export function WarehouseListPage(): JSX.Element {
   const [search, setSearch] = useState("");
   const [lowStock, setLowStock] = useState(false);
 
-  const query = useQuery({
+  const { data = { items: [], total: 0, page, page_size: PAGE_SIZE }, isLoading } = useQuery<PaginatedResponse<Part>>({
     queryKey: ["parts", page, search, lowStock],
     queryFn: () => listParts({ page, page_size: PAGE_SIZE, q: search || undefined, low_stock: lowStock }),
-    keepPreviousData: true
+    placeholderData: (prev) => prev
   });
 
   const deleteMutation = useMutation({
@@ -86,13 +87,13 @@ export function WarehouseListPage(): JSX.Element {
         </div>
       </div>
       <DataTable
-        data={query.data?.items ?? []}
+        data={data.items}
         columns={columns}
-        isLoading={query.isLoading}
+        isLoading={isLoading}
         pagination={{
           page,
           pageSize: PAGE_SIZE,
-          total: query.data?.total ?? 0,
+          total: data.total,
           onPageChange: setPage
         }}
       />

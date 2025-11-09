@@ -7,12 +7,12 @@ import { LoginPage } from "../features/auth/LoginPage";
 import { ChangePasswordPage } from "../features/auth/ChangePasswordPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { WarehouseListPage } from "../features/warehouse/WarehouseListPage";
-import { WarehouseCreatePage } from "../features/warehouse/WarehouseCreatePage";
 import { WarehouseDetailPage } from "../features/warehouse/WarehouseDetailPage";
-import { WarehouseEditPage } from "../features/warehouse/WarehouseEditPage";
 import { MaintenancePage } from "../features/maintenance/MaintenancePage";
-import { ToolingPage } from "../features/tooling/ToolingPage";
 import { UsersPage } from "../features/users/UsersPage";
+import WarehouseCreatePage from "../features/warehouse/WarehouseCreatePage";
+import WarehouseEditPage from "../features/warehouse/WarehouseEditPage";
+import ToolingPage from "../features/tooling/ToolingPage";
 
 export const appRouter = createBrowserRouter([
   {

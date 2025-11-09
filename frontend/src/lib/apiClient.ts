@@ -183,6 +183,8 @@ export interface WorkOrderPayload {
   plan_id?: number | null;
 }
 
+export type WorkOrderUpdatePayload = Partial<WorkOrderPayload>;
+
 export interface MaintenanceHistoryRecord {
   id: number;
   work_order_id: number;
@@ -213,6 +215,8 @@ export interface ToolPayload {
   bm_no?: string | null;
   status?: string;
 }
+
+export type ToolUpdatePayload = Partial<ToolPayload>;
 
 export interface ToolDimension {
   id: number;
@@ -251,6 +255,8 @@ export interface BatchPayload {
   status?: BatchStatus;
   tool_ids?: number[];
 }
+
+export type BatchUpdatePayload = Partial<Omit<BatchPayload, "tool_ids">> & { tool_ids?: number[] };
 
 export interface BatchOperationChange {
   dim_name: string;
@@ -412,8 +418,8 @@ export async function createWorkOrder(payload: WorkOrderPayload): Promise<WorkOr
   return data;
 }
 
-export async function updateWorkOrder(workOrderId: number, payload: WorkOrderPayload): Promise<WorkOrder> {
-  const { data } = await apiClient.put<WorkOrder>(`/maintenance/work-orders/${workOrderId}`, payload);
+export async function updateWorkOrder(workOrderId: number, payload: WorkOrderUpdatePayload): Promise<WorkOrder> {
+  const { data } = await apiClient.patch<WorkOrder>(`/maintenance/work-orders/${workOrderId}`, payload);
   return data;
 }
 
@@ -432,8 +438,8 @@ export async function createTool(payload: ToolPayload): Promise<Tool> {
   return data;
 }
 
-export async function updateTool(toolId: number, payload: ToolPayload): Promise<Tool> {
-  const { data } = await apiClient.put<Tool>(`/tooling/tools/${toolId}`, payload);
+export async function updateTool(toolId: number, payload: ToolUpdatePayload): Promise<Tool> {
+  const { data } = await apiClient.patch<Tool>(`/tooling/tools/${toolId}`, payload);
   return data;
 }
 
@@ -456,8 +462,8 @@ export async function createBatch(payload: BatchPayload): Promise<Batch> {
   return data;
 }
 
-export async function updateBatch(batchId: number, payload: BatchPayload): Promise<Batch> {
-  const { data } = await apiClient.put<Batch>(`/tooling/batches/${batchId}`, payload);
+export async function updateBatch(batchId: number, payload: BatchUpdatePayload): Promise<Batch> {
+  const { data } = await apiClient.patch<Batch>(`/tooling/batches/${batchId}`, payload);
   return data;
 }
 
