@@ -7,6 +7,7 @@
 - [Quick Start](#quick-start)
   - [Docker Compose](#docker-compose)
   - [Local Development](#local-development)
+- [Frontend Quick Start](#frontend-quick-start)
 - [Environment Configuration](#environment-configuration)
 - [Project Structure](#project-structure)
 - [Architecture Overview](#architecture-overview)
@@ -95,6 +96,33 @@ Build production bundle:
 ```bash
 npm run build
 ```
+
+## Frontend Quick Start
+
+1. Install dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Configure environment variables (copy `.env.example` to `.env` and adjust `VITE_API_BASE_URL` if backend is remote).
+3. Start the Vite dev server:
+   ```bash
+   npm run dev
+   ```
+   UI will be available at http://localhost:5173/ and proxies API calls to the backend defined by `VITE_API_BASE_URL`.
+4. Run unit tests and build checks:
+   ```bash
+   npm run test
+   npm run build
+   ```
+5. Docker workflow:
+   ```bash
+   cd dev/docker
+   docker compose up --build frontend
+   ```
+   The compose stack also wires backend (`localhost:8000`) and PostgreSQL for an end-to-end demo.
+
+> **RU:** При работе с фронтендом достаточно запустить `npm run dev`; Docker-режим нужен только для комплексного стенда.
 
 ## Environment Configuration
 | Variable | Description | Default (.env.example) |
@@ -421,10 +449,10 @@ Seeds not created — users table isn’t empty or SEED_* not set in .env.
 
 ## Frontend
 - React 18 + Vite bundler, TailwindCSS + shadcn/ui components, lucide-react icons.
-- Feature folders per module: `src/features/warehouse`, `src/features/maintenance`, `src/features/tooling`.
-- Global state via React Query + Zustand; JWT stored in HttpOnly cookies.
-- i18next handles EN default, RU translation toggles.
-- Layout includes Back/Logout buttons on every view (RU примечание: "Выход" обязан присутствовать).
+- Feature folders per module: `src/features/warehouse`, `src/features/maintenance`, `src/features/tooling`, plus shared guards/layout.
+- Global state via React Query and an AuthContext; access/refresh tokens stored in memory + localStorage with automatic refresh on 401.
+- i18next handles EN default, RU translation toggles (JSON resources under `src/i18n`).
+- Layout provides sidebar navigation, role-aware menu, back/logout buttons (RU примечание: "Выход" обязателен).
 
 ## Modules
 
@@ -608,57 +636,41 @@ curl -X POST http://localhost:8000/api/v1/tooling/batches/42/operation \
 
 ## Users & RBAC Operations
 
-### Seed Users
-- Seed script (`scripts/manage.py seed-users`) provisions:
-  - `root@example.com` / `changeme` – role `root`.
-  - `admin@example.com` / `changeme` – role `admin`.
-  - `viewer@example.com` / `changeme` – role `user`.
-- Passwords hashed via bcrypt (RU: замените на Argon2 в проде при необходимости).
+### UI (Frontend)
+- Root users see an **Admin → Users** navigation entry; admins/users do not.
+- User list supports search, role/status filters, pagination, and inline actions (change role, activate/deactivate, reset password).
+- Creating a user requires a temporary password and optional must-change flag; the new account receives `must_change_password=true` by default.
+- Forced password change: when the API returns `password_change_required=true`, the UI redirects to `/change-password` and blocks module access until a new password is saved.
+- RBAC guards:
+  - `user` → read-only access to Warehouse/Maintenance/Tooling.
+  - `admin` → create/update in modules, no delete.
+  - `root` → full access plus user management.
 
-### Managing Accounts via API
-| Action | Endpoint | Role |
-| --- | --- | --- |
-| Get current user | `GET /api/v1/users/me` | user+ |
-| List users | `GET /api/v1/users` | root |
-| Create user | `POST /api/v1/users` | root |
-| Update user | `PUT /api/v1/users/{id}` | root |
-| Delete user | `DELETE /api/v1/users/{id}` | root |
-
-**Create User Example**
-```bash
-curl -X POST http://localhost:8000/api/v1/users \
-  -H "Authorization: Bearer <ROOT_ACCESS>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "planner@example.com",
-    "password": "S3cure!",
-    "role": "admin",
-    "is_active": true
-  }'
-```
-
-**Role Changes / Deactivation**
-```bash
-curl -X PUT http://localhost:8000/api/v1/users/8 \
-  -H "Authorization: Bearer <ROOT_ACCESS>" \
-  -H "Content-Type: application/json" \
-  -d '{"role": "user", "is_active": false}'
-```
+### API Operations
+| Action | Endpoint | Role | Notes |
+| --- | --- | --- | --- |
+| Get current user | `GET /api/v1/users/me` | user+ | Returns role, must_change flag. |
+| List users | `GET /api/v1/users` | root | Query params `role`, `is_active`, `q`, `page`. |
+| Create user | `POST /api/v1/users` | root | `{username,email?,role,password,must_change_password}` |
+| Update user | `PUT /api/v1/users/{id}` | root | Change role, activation, password flags. |
+| Reset password | `POST /api/v1/users/{id}/reset-password` | root | Issues temporary password + must-change toggle. |
+| Delete user | `DELETE /api/v1/users/{id}` | root | Soft delete in service layer. |
 
 ### CLI Utilities
 ```bash
 python scripts/manage.py seed-users
-python scripts/manage.py create-user --email qa@example.com --role user
-python scripts/manage.py deactivate-user --email admin@example.com
-python scripts/manage.py rotate-secret
+python scripts/manage.py create-user --username qa --role user --password Temp123!
+python scripts/manage.py deactivate-user --username admin
+python scripts/manage.py reset-password --username planner --password Tmp456!
 ```
-- CLI enforces password strength and writes audit entries.
+- CLI commands mirror API validations and write `user_audit_logs`.
 
-### Token Lifecycle & Security
-- Access tokens stored in memory (frontend) and rotated on refresh.
-- Refresh tokens stored HttpOnly cookies; invalidated on logout (`POST /api/v1/auth/logout`).
-- `POST /api/v1/auth/logout` revokes refresh token and clears device sessions.
-- Compromised token? Use `scripts/manage.py revoke-token --jti <id>` or call `/api/v1/auth/revoke` (root only).
+### Security & Troubleshooting
+- Temporary passwords should be random (recommend 12+ chars); enforce `must_change_password=true` for contractors.
+- Logout (`POST /api/v1/auth/logout`) revokes refresh tokens; UI clears tokens and returns to `/login`.
+- Stuck on password change screen → ensure `/auth/change-password` succeeds and user is active.
+- 403 on Users page → only `root` role can access; verify token role via `/users/me`.
+- Audit trail for user management actions is available via `user_audit_logs` table (API TODO).
 
 ## Import & Export (Warehouse)
 - **Formats:** CSV or XLSX with headers `sku,name,unit,min_qty,location_id,description`.

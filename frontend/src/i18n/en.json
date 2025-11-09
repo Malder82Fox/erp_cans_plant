@@ -1,0 +1,75 @@
+{
+  "app": {
+    "title": "ERP Operations Portal",
+    "logout": "Logout",
+    "changePassword": "Change Password",
+    "save": "Save",
+    "cancel": "Cancel",
+    "actions": "Actions",
+    "search": "Search",
+    "filters": "Filters",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View",
+    "loading": "Loading...",
+    "status": "Status",
+    "role": "Role",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Login",
+    "passwordChangeRequired": "Password change required",
+    "oldPassword": "Current password",
+    "newPassword": "New password",
+    "confirm": "Confirm",
+    "mustChange": "Must change password on next login",
+    "temporaryPassword": "Temporary password"
+  },
+  "users": {
+    "title": "Users",
+    "create": "Create user",
+    "reset": "Reset password",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "role": "Role",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "mustChange": "Must change password",
+    "email": "Email",
+    "searchPlaceholder": "Search by username or email",
+    "roleFilter": "Filter by role",
+    "statusFilter": "Filter by status"
+  },
+  "warehouse": {
+    "title": "Warehouse Parts",
+    "create": "Create part",
+    "import": "Import",
+    "audit": "Audit log",
+    "lowStock": "Low stock only"
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "equipment": "Equipment",
+    "templates": "PM Templates",
+    "plans": "PM Plans",
+    "workOrders": "Work Orders",
+    "history": "History"
+  },
+  "tooling": {
+    "title": "Tooling",
+    "tools": "Tools",
+    "batches": "Batches",
+    "reports": "Reports"
+  },
+  "errors": {
+    "required": "This field is required",
+    "network": "Network error. Please try again.",
+    "forbidden": "You do not have permission to perform this action.",
+    "unknown": "Unexpected error"
+  }
+}
