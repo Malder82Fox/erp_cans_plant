@@ -1,31 +1,61 @@
 name: Update README structure
+
 on:
   push:
-    branches: [develop]
-  workflow_dispatch:
+    branches: [ develop ]   # запускается при пуше в develop
+  workflow_dispatch:        # можно запустить вручную из Actions
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false   # будем явно прописывать remote с токеном
+
       - name: Generate tree
+        shell: bash
         run: |
           sudo apt-get update && sudo apt-get install -y tree
           TREE=$(tree -I "node_modules|.git|__pycache__|.venv|dist|build" -a -L 3)
+
+          # Оставляем маркеры и блок кода между ними
           awk 'BEGIN{p=1}
-               /<!-- STRUCTURE:START -->/{print; print "```"; p=0; next}
-               /<!-- STRUCTURE:END -->/{print "```"; p=1}
-               p{print}' README.md > README.new.md
+          /<!-- STRUCTURE:START -->/{print; print "```"; p=0; next}
+          /<!-- STRUCTURE:END -->/{print "```"; print; p=1}
+          p{print}' README.md > README.new.md
           mv README.new.md README.md
-          # Вставка дерева между маркерами
-          perl -0777 -pe "s/<!-- STRUCTURE:START -->.*?<!-- STRUCTURE:END -->/<!-- STRUCTURE:START -->\n\`\`\`\n${TREE}\n\`\`\`\n<!-- STRUCTURE:END -->/s" -i README.md
-      - name: Commit changes
+
+          # Вставляем сгенерированное дерево между маркерами
+          perl -0777 -pe "s/<!-- STRUCTURE:START -->.*?<!-- STRUCTURE:END -->/<!-- STRUCTURE:START -->\n```\n${TREE}\n```\n<!-- STRUCTURE:END -->/s" -i README.md
+
+      - name: Commit & push back to the SAME branch
+        shell: bash
         run: |
+          set -e
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
             git add README.md
             git commit -m "docs(readme): auto-update Project Structure"
-            git push
+
+            # Пушим с правами токена Actions
+            git remote set-url origin \
+              https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+            # Имя исходной ветки (develop при push, head-ветка при PR)
+            BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+
+            # Пушим обратно в ту же ветку (НЕ в main)
+            git push origin HEAD:"$BRANCH"
+          else
+            echo "No changes; nothing to commit."
           fi
