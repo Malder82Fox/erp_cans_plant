@@ -1,0 +1,75 @@
+{
+  "app": {
+    "title": "ERP Портал",
+    "logout": "Выход",
+    "changePassword": "Сменить пароль",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "actions": "Действия",
+    "search": "Поиск",
+    "filters": "Фильтры",
+    "create": "Создать",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "view": "Просмотр",
+    "loading": "Загрузка...",
+    "status": "Статус",
+    "role": "Роль",
+    "yes": "Да",
+    "no": "Нет"
+  },
+  "auth": {
+    "loginTitle": "Вход",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "submit": "Войти",
+    "passwordChangeRequired": "Требуется сменить пароль",
+    "oldPassword": "Текущий пароль",
+    "newPassword": "Новый пароль",
+    "confirm": "Подтвердить",
+    "mustChange": "Необходимо сменить пароль при следующем входе",
+    "temporaryPassword": "Временный пароль"
+  },
+  "users": {
+    "title": "Пользователи",
+    "create": "Создать пользователя",
+    "reset": "Сбросить пароль",
+    "deactivate": "Деактивировать",
+    "activate": "Активировать",
+    "role": "Роль",
+    "statusActive": "Активен",
+    "statusInactive": "Неактивен",
+    "mustChange": "Обязательная смена пароля",
+    "email": "Email",
+    "searchPlaceholder": "Поиск по имени или email",
+    "roleFilter": "Фильтр по роли",
+    "statusFilter": "Фильтр по статусу"
+  },
+  "warehouse": {
+    "title": "Склад",
+    "create": "Создать запчасть",
+    "import": "Импорт",
+    "audit": "Аудит",
+    "lowStock": "Только минимум"
+  },
+  "maintenance": {
+    "title": "ТОиР",
+    "equipment": "Оборудование",
+    "templates": "Шаблоны ППР",
+    "plans": "Планы",
+    "workOrders": "Наряд-заказы",
+    "history": "История"
+  },
+  "tooling": {
+    "title": "Инструмент",
+    "tools": "Инструменты",
+    "batches": "Партии",
+    "reports": "Отчеты"
+  },
+  "errors": {
+    "required": "Обязательное поле",
+    "network": "Ошибка сети. Попробуйте ещё раз.",
+    "forbidden": "Нет прав для выполнения действия.",
+    "unknown": "Неизвестная ошибка"
+  }
+}
