@@ -8,9 +8,9 @@
 > 🔗 **See also / См. также:** [docs/RUN_GUIDE.md](RUN_GUIDE.md) — step-by-step backend/frontend startup guide for Windows (Conda) and Ubuntu (venv/Docker).
 
 ## Prerequisites / Предварительные требования
-**EN:** Ensure the services run as described in the run guide: backend listening on `http://localhost:8000` (FastAPI entry point `erp.backend.app:app`) and frontend on `http://localhost:5173`. Copy `.env.example` to `.env`, apply Alembic migrations, and keep PostgreSQL reachable.
+**EN:** Ensure the services run as described in the run guide: backend listening on `http://localhost:8000` (FastAPI entry point `erp.backend.app:app`) and frontend on `http://localhost:5173`. Copy `.env.example` to `.env`, run `python scripts/manage.py init-db` (or enable `AUTO_CREATE_DB_SCHEMA=true`), and keep your database reachable (SQLite by default).
 
-**RU:** Перед выполнением операций убедитесь, что сервисы запущены как в руководстве по запуску: backend на `http://localhost:8000` (точка входа FastAPI `erp.backend.app:app`), frontend на `http://localhost:5173`. Скопируйте `.env.example` в `.env`, примените миграции Alembic и обеспечьте доступность PostgreSQL.
+**RU:** Перед выполнением операций убедитесь, что сервисы запущены как в руководстве по запуску: backend на `http://localhost:8000` (точка входа FastAPI `erp.backend.app:app`), frontend на `http://localhost:5173`. Скопируйте `.env.example` в `.env`, выполните `python scripts/manage.py init-db` (или задайте `AUTO_CREATE_DB_SCHEMA=true`) и убедитесь в доступности базы данных (по умолчанию используется SQLite).
 
 ### Auth-related environment variables / Переменные окружения для аутентификации
 **EN:** The backend reads these keys (see `.env.example` and `erp/backend/config.py`). Adjust them before starting the app or running CLI scripts.
@@ -26,7 +26,6 @@
 | `PASSWORD_HASH_SCHEME` | `bcrypt` (default) or `argon2id`. | `bcrypt` (по умолчанию) или `argon2id`. | `config.py` |
 | `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_*` | Password policy toggles. | Параметры политики паролей. | `config.py` |
 | `LOGIN_RATE_LIMIT_PER_MINUTE`, `LOGIN_RATE_LIMIT_WINDOW_MINUTES` | Login rate-limit thresholds. | Порог ограничения попыток логина. | `config.py` |
-| `SEED_ROOT_PASSWORD`, `SEED_ADMIN_PASSWORD`, `SEED_USER_PASSWORD` | Bootstrap credentials for auto-seeded accounts. | Пароли сид-пользователей для автоматического создания. | `.env.example`, `core/seeding.py` |
 | `FRONTEND_URL` | Allowed CORS origin for SPA. | Разрешённый CORS-источник для SPA. | README (`Environment Configuration`) |
 | `VITE_API_BASE_URL` | Frontend base URL for API calls. | Базовый URL API для фронтенда. | `.env.example`, `RUN_GUIDE.md` |
 
@@ -87,7 +86,7 @@ python scripts/manage.py users set-role --actor root --username qa_admin --role 
 python scripts/manage.py users reset-password --actor root --username qa_user --password "TempAgain!2025" --must-change
 ```
 
-> **Bootstrap tip / Совет по bootstrap:** For the very first root, enable seed passwords (see section C) and restart the backend; once `root` exists you can switch to CLI for day-to-day operations.
+> **Bootstrap tip / Совет по bootstrap:** For a brand-new database, run the bootstrap script from section C to insert `root` once, then manage users via CLI/API as usual.
 
 ### B. HTTP API / HTTP API
 **EN:** All endpoints live under `http://localhost:8000/api/v1`. Authentication uses JSON payloads with JWT access/refresh tokens returned by `/auth/login` and `/auth/refresh`. Use `Authorization: Bearer <token>` headers for protected routes.
@@ -111,7 +110,7 @@ python scripts/manage.py users reset-password --actor root --username qa_user --
 ```bash
 curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"root","password":"ChangeMeRoot123!"}'
+  -d '{"username":"root","password":"<ROOT_PASSWORD>"}'
 ```
 ```bash
 ACCESS_TOKEN="<paste access token>"
@@ -123,7 +122,7 @@ curl -s -X GET http://localhost:8000/api/v1/users/me \
 ```bash
 curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"root","password":"ChangeMeRoot123!"}'
+  -d '{"username":"root","password":"<ROOT_PASSWORD>"}'
 ```
 ```bash
 ACCESS_TOKEN="<вставьте access token>"
@@ -154,22 +153,20 @@ curl -s -X POST http://localhost:8000/api/v1/users/${USER_ID}/reset-password \
   -d '{"temporary_password":"TempAgain!2025","must_change_password":true}'
 ```
 
-### C. Seed & Bootstrap / Сиды и первичная инициализация
-**EN:** During startup the app calls `seed_users_if_empty` and creates `root`, `admin`, `user` accounts if the users table is empty **and** `SEED_*` passwords are defined. This is the safest way to obtain the first root user before switching to CLI/API management.
+### C. Bootstrap without seeds / Первичный запуск без сидов
+**EN:** Databases start empty. Run `python scripts/manage.py init-db` (or set `AUTO_CREATE_DB_SCHEMA=true`) before the first backend launch, then create the initial root account via CLI/API/UI.
 
-**RU:** При старте приложение вызывает `seed_users_if_empty` и создаёт учётные записи `root`, `admin`, `user`, если таблица пользователей пуста **и** заданы пароли `SEED_*`. Это самый безопасный способ получить первого пользователя root перед дальнейшим управлением через CLI/API.
+**RU:** База создаётся пустой. Выполните `python scripts/manage.py init-db` (или задайте `AUTO_CREATE_DB_SCHEMA=true`) перед первым запуском бэкенда, затем создайте root-аккаунт вручную через CLI/API/UI.
 
-**Steps — EN:**
-1. Copy `.env.example` to `.env` and set strong values for `SEED_ROOT_PASSWORD`, `SEED_ADMIN_PASSWORD`, `SEED_USER_PASSWORD`.
-2. Start the backend (`uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload`).
-3. Verify the root account by logging in (`username=root`).
+**Checklist — EN:**
+1. Copy `.env.example` to `.env` and confirm `DATABASE_URL` (SQLite default is ready for local use).
+2. Initialize tables (`python scripts/manage.py init-db`).
+3. Create a privileged user with your usual workflow and log in.
 
-**Шаги — RU:**
-1. Скопируйте `.env.example` в `.env` и задайте стойкие значения `SEED_ROOT_PASSWORD`, `SEED_ADMIN_PASSWORD`, `SEED_USER_PASSWORD`.
-2. Запустите backend (`uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload`).
-3. Проверьте root-аккаунт, выполнив вход (`username=root`).
-
-> **Alternative / Альтернатива:** If you prefer manual bootstrap, run the CLI once with seeded root credentials, then rotate the password immediately.
+**Чек-лист — RU:**
+1. Скопируйте `.env.example` в `.env` и при необходимости скорректируйте `DATABASE_URL` (по умолчанию готов SQLite).
+2. Инициализируйте таблицы (`python scripts/manage.py init-db`).
+3. Создайте привилегированного пользователя привычным способом и выполните вход.
 
 ## Token Usage in Frontend / Работа токенов на фронтенде
 **EN:** The React/Vite frontend stores tokens in `localStorage` under the `erp.auth` key (see `frontend/src/lib/authStorage.ts`) and injects `Authorization: Bearer` headers via Axios interceptors (`frontend/src/lib/api.ts`). Refresh tokens are exchanged automatically on HTTP 401 responses, and logout handlers purge storage and in-memory tokens.
@@ -204,30 +201,51 @@ curl -s -X POST http://localhost:8000/api/v1/users/${USER_ID}/reset-password \
 
 ## Common Flows (Copy & Run) / Типовые сценарии (копируйте и запускайте)
 
-### Flow 1: Bootstrap root via seeds & CLI / Сценарий 1: Bootstrap root через сиды и CLI
+### Flow 1: Bootstrap root manually / Сценарий 1: Bootstrap root вручную
 **EN:**
-1. Set strong passwords in `.env` (`SEED_ROOT_PASSWORD=RootPassw0rd!` etc.).
-2. Start backend once to seed accounts.
-3. Use CLI to verify and rotate root password.
+1. Run `python scripts/manage.py init-db` to create tables.
+2. Insert a root account once (example script below) and record the password securely.
+3. Use the management CLI to verify and rotate credentials as needed.
 
 **RU:**
-1. Задайте стойкие пароли в `.env` (`SEED_ROOT_PASSWORD=RootPassw0rd!` и т.д.).
-2. Запустите backend для создания аккаунтов.
-3. Используйте CLI для проверки и смены пароля root.
+1. Выполните `python scripts/manage.py init-db`, чтобы создать таблицы.
+2. Однократно добавьте root-аккаунт (пример скрипта ниже) и сохраните пароль в надёжном месте.
+3. Используйте CLI для проверки и смены пароля при необходимости.
 
-**Commands / Команды:**
+**Bootstrap script / Скрипт bootstrap:**
+```bash
+python - <<'PY'
+from erp.backend.core.database import session_scope
+from erp.backend.core.security import hash_password
+from erp.backend.models.user import User, UserRole
+
+password = "StrongRootPass!2025"
+with session_scope() as session:
+    if session.query(User).filter(User.username == "root").first():
+        raise SystemExit("Root user already exists")
+    user = User(
+        username="root",
+        email="root@example.com",
+        password_hash=hash_password(password),
+        role=UserRole.ROOT,
+        must_change_password=True,
+        is_active=True,
+    )
+    session.add(user)
+print("Created root user with temporary password", password)
+PY
+```
+After logging in, rotate the password using the CLI:
 ```cmd
 # Windows (Conda)
 conda activate erp-backend
 set PYTHONPATH=%CD%
-python scripts\manage.py users list --actor root
 python scripts\manage.py users reset-password --actor root --username root --password "NewRoot!2025" --must-change
 ```
 ```bash
 # Ubuntu (venv)
 source .venv/bin/activate
 export PYTHONPATH="$(pwd)"
-python scripts/manage.py users list --actor root
 python scripts/manage.py users reset-password --actor root --username root --password "NewRoot!2025" --must-change
 ```
 

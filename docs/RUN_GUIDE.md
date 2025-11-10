@@ -10,6 +10,14 @@ This guide explains how to run the ERP platform backend (FastAPI) and frontend (
 - Git, PostgreSQL 14+, and VS Code (for Windows workflow)
 > **RU:** Требуются Python 3.10+, Node.js 20 (см. `.nvmrc`), Git, PostgreSQL 14+ и VS Code (для сценария Windows).
 
+## First run with empty tables / Первый запуск с пустыми таблицами
+1. EN: Copy `.env.example` to `.env` and adjust `DATABASE_URL` as needed (SQLite file works out of the box). / RU: Скопируйте `.env.example` в `.env` и при необходимости укажите `DATABASE_URL` (по умолчанию используется локальный файл SQLite).
+2. EN: Initialize tables via `python scripts/manage.py init-db` or set `AUTO_CREATE_DB_SCHEMA=true` before starting the backend. / RU: Создайте таблицы командой `python scripts/manage.py init-db` либо установите `AUTO_CREATE_DB_SCHEMA=true` перед запуском бэкенда.
+3. EN: Start the backend and frontend services. / RU: Запустите бэкенд и фронтенд.
+4. EN: Create the first user using your usual flow (CLI/API/UI). / RU: Создайте первого пользователя привычным способом (CLI/API/UI).
+
+> **RU:** Если видите ошибки аутентификации при первом запуске — сначала создайте пользователя (CLI/API/UI) и повторите вход.
+
 ### Windows + Conda (VS Code)
 1. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) and VS Code with the Python extension.
 2. From an Anaconda Prompt:
@@ -20,15 +28,18 @@ This guide explains how to run the ERP platform backend (FastAPI) and frontend (
    conda activate erp-backend
    copy .env.example .env
    ```
-3. Set the PostgreSQL DSN and seed passwords in `.env` (at repo root). Example values are pre-populated.
-4. Apply database migrations:
+3. Set `DATABASE_URL` in `.env` if you are not using the default SQLite file; adjust other secrets as required.
+4. Initialize the empty schema (override `DATABASE_URL` for Postgres if desired):
    ```cmd
-   set DATABASE_URL=postgresql+psycopg://erp:erp@127.0.0.1:5432/erp
-   alembic -c erp/backend/alembic.ini upgrade head
+   rem Optional Postgres DSN example
+   rem set DATABASE_URL=postgresql+psycopg://erp:erp@127.0.0.1:5432/erp
+   python scripts/manage.py init-db
    ```
 5. Start the backend:
    ```cmd
    set PYTHONPATH=%CD%
+   rem Optional: let the backend auto-create tables on startup
+   rem set AUTO_CREATE_DB_SCHEMA=true
    uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload
    ```
 6. In a second terminal (PowerShell or cmd), start the frontend:
@@ -56,19 +67,20 @@ This guide explains how to run the ERP platform backend (FastAPI) and frontend (
    pip install -r erp/backend/requirements.txt
    cp .env.example .env
    ```
-3. Export environment variables as needed (adjust credentials to match your local PostgreSQL instance):
+3. Export environment variables as needed (optional override if you prefer PostgreSQL over SQLite):
    ```bash
-   export DATABASE_URL="postgresql+psycopg://erp:erp@127.0.0.1:5432/erp"
+   # export DATABASE_URL="postgresql+psycopg://erp:erp@127.0.0.1:5432/erp"
    export PYTHONPATH="$(pwd)"
    ```
-4. Run database migrations:
+4. Initialize the empty schema:
    ```bash
-   alembic -c erp/backend/alembic.ini upgrade head
+   python ../scripts/manage.py init-db
    ```
 5. Start the backend API:
    ```bash
    uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload
    ```
+   (Optional) export `AUTO_CREATE_DB_SCHEMA=true` before running `uvicorn` to auto-create tables on startup.
 6. In a new terminal for the frontend:
    ```bash
    cd frontend
@@ -81,13 +93,11 @@ This guide explains how to run the ERP platform backend (FastAPI) and frontend (
 ## Environment variables / Переменные окружения
 | Name | Description (EN) | Описание (RU) | Default / Example |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | SQLAlchemy DSN for PostgreSQL or SQLite. | Строка подключения SQLAlchemy к PostgreSQL или SQLite. | `postgresql+psycopg://erp:erp@127.0.0.1:5432/erp` |
+| `DATABASE_URL` | SQLAlchemy DSN for PostgreSQL or SQLite. | Строка подключения SQLAlchemy к PostgreSQL или SQLite. | `sqlite:///./erp.db` |
+| `AUTO_CREATE_DB_SCHEMA` | Auto-create tables on backend startup (`true`/`false`). | Автосоздание таблиц при старте бэкенда (`true`/`false`). | `` |
 | `SECRET_KEY` | Symmetric key for signing JWT tokens. | Симметричный ключ для подписи JWT. | `change-me` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime in minutes. | Время жизни access-токена в минутах. | `30` |
 | `REFRESH_TOKEN_EXPIRE_MINUTES` | Refresh token lifetime in minutes. | Время жизни refresh-токена в минутах. | `10080` |
-| `SEED_ROOT_PASSWORD` | Password for initial root user (auto-created when DB is empty). | Пароль для начального пользователя root (создаётся при первом запуске). | `RootPassw0rd!` |
-| `SEED_ADMIN_PASSWORD` | Password for initial admin user. | Пароль для начального пользователя admin. | `AdminPassw0rd!` |
-| `SEED_USER_PASSWORD` | Password for initial standard user. | Пароль для начального пользователя user. | `UserPassw0rd!` |
 | `VITE_API_BASE_URL` | API base URL consumed by the frontend. | Базовый URL API для фронтенда. | `http://localhost:8000/api/v1` |
 
 `.env.example` at the repository root contains safe defaults—copy it to `.env` before local runs.
@@ -96,12 +106,12 @@ This guide explains how to run the ERP platform backend (FastAPI) and frontend (
 ## Backend workflows / Бэкенд-сценарии
 
 ### Common steps / Общие шаги
-1. Ensure PostgreSQL is running and the target database exists (`createdb erp`).
+1. Ensure your target database exists (SQLite file is created automatically; for Postgres run `createdb erp`).
 2. Copy `.env.example` to `.env` and adjust secrets/DSN.
-3. Run Alembic migrations (`alembic -c erp/backend/alembic.ini upgrade head`).
+3. Initialize tables via `python scripts/manage.py init-db` or set `AUTO_CREATE_DB_SCHEMA=true` before launching the backend.
 4. Start the API with `uvicorn erp.backend.app:app --host 0.0.0.0 --port 8000 --reload`.
 5. API docs: `http://localhost:8000/docs`.
-> **RU:** Убедитесь, что PostgreSQL запущен и создана база (`createdb erp`), скопируйте `.env`, выполните миграции Alembic и запустите `uvicorn`. Документация доступна по `http://localhost:8000/docs`.
+> **RU:** Убедитесь, что база создана (для SQLite файл создаётся автоматически, для PostgreSQL выполните `createdb erp`), скопируйте `.env`, выполните `python scripts/manage.py init-db` (или задайте `AUTO_CREATE_DB_SCHEMA=true`), затем запустите `uvicorn`. Документация доступна по `http://localhost:8000/docs`.
 
 ### Health checks / Проверки работоспособности
 - English: `curl http://127.0.0.1:8000/health`
@@ -117,10 +127,10 @@ pytest erp/backend/tests
 ```
 > **RU:** Запустите юнит-тесты командой `pytest erp/backend/tests` из корня репозитория.
 
-### Seeding and first admin / Создание первоначальных пользователей
-- When `SEED_ROOT_PASSWORD`, `SEED_ADMIN_PASSWORD`, and `SEED_USER_PASSWORD` are defined in `.env`, the first run of the backend will create `root`, `admin`, and `user` accounts automatically.
-- Use the root account to manage others via CLI: `python -m scripts.manage users create --actor root --username qa-admin --role admin --password "StrongPass123!"`
-> **RU:** Если заданы `SEED_ROOT_PASSWORD`, `SEED_ADMIN_PASSWORD` и `SEED_USER_PASSWORD` в `.env`, при первом запуске автоматически создаются пользователи `root`, `admin` и `user`. Для управления аккаунтами используйте CLI: `python -m scripts.manage users create --actor root --username qa-admin --role admin --password "StrongPass123!"`.
+### Initial users / Первые пользователи
+- Run `python scripts/manage.py init-db` (or enable `AUTO_CREATE_DB_SCHEMA=true`) to create empty tables before the first start.
+- Provision the first privileged account manually (CLI/API/UI) using your established workflow.
+- **RU:** После инициализации таблиц создайте нужных пользователей вручную (CLI/API/UI); автоматические сиды отключены.
 
 ## Frontend workflows / Фронтенд-сценарии
 1. `cd frontend`
@@ -160,10 +170,10 @@ To stop: `docker compose down`
 | Issue | Fix (EN) | Решение (RU) |
 | --- | --- | --- |
 | Port 8000 or 5173 already in use | Stop conflicting process or change `--port`. | Остановите процесс или измените `--port` в команде запуска. |
-| `DATABASE_URL` errors | Confirm PostgreSQL is running and credentials match `.env`. | Проверьте запуск PostgreSQL и корректность реквизитов в `.env`. |
-| Alembic migration fails | Ensure `alembic.ini` path is correct and env vars loaded (`DATABASE_URL`). | Убедитесь, что указан правильный путь к `alembic.ini` и заданы переменные окружения. |
+| `DATABASE_URL` errors | Confirm the DSN points to an existing DB (SQLite path or Postgres credentials) and matches `.env`. | Проверьте, что строка подключения указывает на существующую БД (путь SQLite или реквизиты Postgres) и соответствует `.env`. |
+| Schema init fails | Verify permissions for the target database and rerun `python scripts/manage.py init-db`. | Проверьте права доступа к целевой БД и повторите `python scripts/manage.py init-db`. |
 | Cannot reach API from frontend | Verify `VITE_API_BASE_URL` matches backend URL and CORS allows origin. | Проверьте совпадение `VITE_API_BASE_URL` и адреса бэкенда, а также настройки CORS. |
-| Seed users missing | Set seed passwords in `.env` before first backend start or recreate DB. | Задайте пароли сидов в `.env` до первого старта или пересоздайте базу. |
+| No users on first login | Create an account manually via CLI/API/UI; automatic seeding is disabled. | Создайте пользователя вручную через CLI/API/UI; автоматические сиды отключены. |
 | Windows firewall prompts | Allow inbound connections for Python and Node.js. | Разрешите входящие соединения для Python и Node.js в брандмауэре Windows. |
 
 ## Appendix / Приложение
@@ -172,9 +182,9 @@ Minimal sanity checks after startup:
 # Health endpoint
 curl http://127.0.0.1:8000/health
 
-# Token request using seeded root user
+# Token request using your manually created account
 curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "root", "password": "RootPassw0rd!"}'
+  -d '{"username": "<USERNAME>", "password": "<PASSWORD>"}'
 ```
-> **RU:** Минимальные проверки: `curl http://127.0.0.1:8000/health` и запрос токена `curl -X POST ...` с данными пользователя `root`.
+> **RU:** Минимальные проверки: `curl http://127.0.0.1:8000/health` и запрос токена `curl -X POST ...` с данными созданного вручную пользователя.
